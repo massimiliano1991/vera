@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="it">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vera</title>
+<style>
+  html,body{margin:0;height:100%;background:#12100e;color:#f2ece3;
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .c{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:28px;box-sizing:border-box}
+  h1{font-size:44px;letter-spacing:-.02em;margin:0 0 6px;font-weight:600}
+  p{max-width:22em;color:#b8ada0;margin:6px 0}
+  .p{width:9px;height:9px;border-radius:50%;background:#6b6257;margin-bottom:22px;
+    transition:background .4s}
+  .p.si{background:#7bd88f;box-shadow:0 0 16px #7bd88f66}
+  .p.no{background:#d87b7b}
+  a.b{margin-top:22px;display:inline-block;padding:13px 26px;border-radius:999px;
+    background:#f2ece3;color:#12100e;text-decoration:none;font-weight:600}
+  code{background:#221e1a;padding:2px 7px;border-radius:5px;font-size:14px}
+</style>
+<div class="c">
+  <div class="p" id="p"></div>
+  <h1>Vera</h1>
+  <p id="m">Un momento…</p>
+  <div id="a"></div>
+</div>
+<script>
+// Il segreto vive nel FRAMMENTO: il browser non lo manda a nessun server, quindi non e'
+// mai passato di qui dentro. Se non c'e', questa e' solo una porta senza chiave.
+var seg = (location.hash || "").replace(/^#/, "").trim();
+var m = document.getElementById("m"), p = document.getElementById("p"), a = document.getElementById("a");
+
+function fallita(t){ p.className = "p no"; m.textContent = t; }
+
+if (!seg) {
+  fallita("Questa e' la porta di Vera. Per entrare serve il link personale che ti ha mandato lei — quello che finisce con il cancelletto.");
+} else {
+  fetch("dove.json?t=" + Date.now(), {cache: "no-store"})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d.host) { fallita("Vera in questo momento non e' raggiungibile. Riprova fra poco: appena torna online questo stesso link funziona."); return; }
+      var dest = d.host + "/v/" + encodeURIComponent(seg) + "/";
+      // Chiedo alla macchina di Vera se e' sveglia PRIMA di mandarci il telefono: meglio una
+      // frase mia che l'errore di rete del browser in mano a un cliente.
+      var ko = setTimeout(function(){ lenta(dest); }, 4000);
+      fetch(d.host + "/vivo", {cache: "no-store"})
+        .then(function(r){ return r.json(); })
+        .then(function(v){ clearTimeout(ko); if (v && v.vivo) { p.className = "p si"; m.textContent = "Ci sono. Ti porto dentro."; location.replace(dest); } else { lenta(dest); } })
+        .catch(function(){ clearTimeout(ko); lenta(dest); });
+    })
+    .catch(function(){ fallita("Non riesco a leggere dove sono. Riprova fra un minuto."); });
+}
+
+function lenta(dest){
+  p.className = "p no";
+  m.textContent = "Vera non risponde in questo momento — probabilmente il computer e' spento. Questo link resta valido: riprova piu' tardi.";
+  a.innerHTML = '<a class="b" href="' + dest + '">Prova lo stesso</a>';
+}
+</script>
+</html>
