@@ -34,6 +34,9 @@ function fallita(t){ p.className = "p no"; m.textContent = t; }
 
 if (!seg) {
   fallita("Questa e' la porta di Vera. Per entrare serve il link personale che ti ha mandato lei — quello che finisce con il cancelletto.");
+  // Un solo utente atteso, e potrebbe arrivare qui SENZA la chiave (un indirizzo detto a
+  // voce perde il frammento): la porta chiusa deve dire anche come si recupera la chiave.
+  a.innerHTML = "<p>Non ce l'hai? Sblocca il computer di Vera: compare un codice QR — inquadralo col telefono e sei dentro. Oppure chiedi il link a Massimiliano.</p>";
 } else {
   fetch("dove.json?t=" + Date.now(), {cache: "no-store"})
     .then(function(r){ return r.json(); })
