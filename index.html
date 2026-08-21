@@ -17,6 +17,13 @@
   a.b{margin-top:22px;display:inline-block;padding:13px 26px;border-radius:999px;
     background:#f2ece3;color:#12100e;text-decoration:none;font-weight:600}
   code{background:#221e1a;padding:2px 7px;border-radius:5px;font-size:14px}
+  input{margin-top:18px;width:min(20em,86vw);padding:14px 16px;border-radius:12px;
+    border:1px solid #3a332c;background:#1b1815;color:#f2ece3;font-size:19px;
+    text-align:center;box-sizing:border-box}
+  input:focus{outline:none;border-color:#7bd88f}
+  button{margin-top:12px;padding:13px 30px;border:0;border-radius:999px;
+    background:#f2ece3;color:#12100e;font-weight:600;font-size:16px}
+  .err{color:#d87b7b;min-height:1.4em;margin-top:10px;font-size:14px}
 </style>
 <div class="c">
   <div class="p" id="p"></div>
@@ -33,10 +40,44 @@ var m = document.getElementById("m"), p = document.getElementById("p"), a = docu
 function fallita(t){ p.className = "p no"; m.textContent = t; }
 
 if (!seg) {
-  fallita("Questa e' la porta di Vera. Per entrare serve il link personale che ti ha mandato lei — quello che finisce con il cancelletto.");
-  // Un solo utente atteso, e potrebbe arrivare qui SENZA la chiave (un indirizzo detto a
-  // voce perde il frammento): la porta chiusa deve dire anche come si recupera la chiave.
-  a.innerHTML = "<p>Non ce l'hai? Sblocca il computer di Vera: compare un codice QR — inquadralo col telefono e sei dentro. Oppure chiedi il link a Massimiliano.</p>";
+  // ⚠ [g1211] Qui c'era un vicolo cieco: «sblocca il computer di Vera, compare un QR».
+  // Lo schermo non e' MAI stato sbloccato — sette ore di coperchio alzato il 20/08, zero
+  // sblocchi — e infatti in tre giorni nessuno ha aperto niente. L'unico canale che
+  // funziona davvero e' la mia voce nella stanza, e una chiave esadecimale non ci passa.
+  // Da qui si entra con TRE PAROLE, che la voce sa dire e la mano sa ribattere.
+  fallita("Scrivi le tre parole che ti ho detto.");
+  a.innerHTML = '<input id="k" placeholder="tre parole" autocapitalize="off" autocorrect="off" '
+              + 'spellcheck="false" enterkeyhint="go"><br><button id="go">Entra</button>'
+              + '<div class="err" id="e"></div>'
+              + "<p style='font-size:13px;margin-top:26px'>Se invece hai il link personale che finisce col cancelletto, aprilo: entri da solo.</p>";
+  var k = document.getElementById("k"), e = document.getElementById("e");
+  k.focus();
+  function entra(){
+    var v = (k.value || "").trim();
+    if (!v) return;
+    e.textContent = "…";
+    fetch("dove.json?t=" + Date.now(), {cache: "no-store"})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (!d.host) { e.textContent = "Vera non e’ raggiungibile adesso. Riprova fra poco."; return; }
+        return fetch(d.host + "/apri?parola=" + encodeURIComponent(v), {cache: "no-store"})
+          .then(function(r){ return r.json(); })
+          .then(function(j){
+            if (j && j.seg) {
+              // il link resta valido sul suo telefono: da adesso in poi non deve piu’
+              // ribattere niente, gli basta riaprire la pagina.
+              location.replace(d.host + "/v/" + encodeURIComponent(j.seg) + "/");
+            } else if (j && j.no === "troppi-tentativi") {
+              e.textContent = "Troppi tentativi sbagliati. Riprova fra un’ora.";
+            } else {
+              e.textContent = "Non sono queste. Riprova, o chiedimelo a voce.";
+            }
+          });
+      })
+      .catch(function(){ e.textContent = "Non riesco a leggere dove sono. Riprova fra un minuto."; });
+  }
+  document.getElementById("go").onclick = entra;
+  k.onkeydown = function(ev){ if (ev.key === "Enter") entra(); };
 } else {
   fetch("dove.json?t=" + Date.now(), {cache: "no-store"})
     .then(function(r){ return r.json(); })
