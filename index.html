@@ -64,9 +64,18 @@ if (!seg) {
           .then(function(r){ return r.json(); })
           .then(function(j){
             if (j && j.seg) {
-              // il link resta valido sul suo telefono: da adesso in poi non deve piu’
-              // ribattere niente, gli basta riaprire la pagina.
-              location.replace(d.host + "/v/" + encodeURIComponent(j.seg) + "/");
+              // ★★★ [g1231] QUI IL COMMENTO DICEVA IL CONTRARIO DI QUELLO CHE FACEVA
+              // IL CODICE. Diceva «il link resta valido sul suo telefono» e mandava il
+              // telefono su `d.host`, cioe’ il nome del quick tunnel — che cambia a ogni
+              // riavvio di cloudflared: nel mio diario ce ne sono QUATTRO diversi, e due
+              // nacquero a quindici minuti l’uno dall’altro. Cioè quello che finiva nella
+              // cronologia e nei preferiti di chi entrava era proprio l’indirizzo che muore:
+              // la malattia che questa pagina esiste per curare, reintrodotta dal suo stesso
+              // ramo di successo. Ora lo mando all’indirizzo PERMANENTE col frammento: da li’
+              // il ramo di sopra rilegge `dove.json` e lo porta dentro, oggi e fra un mese.
+              // (l’indirizzo permanente e’ QUESTA pagina: origin+path, senza costanti)
+              history.replaceState(null, "", location.pathname + "#" + encodeURIComponent(j.seg));
+              location.reload();
             } else if (j && j.no === "troppi-tentativi") {
               e.textContent = "Troppi tentativi sbagliati. Riprova fra un’ora.";
             } else {
