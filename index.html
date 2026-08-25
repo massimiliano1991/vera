@@ -91,7 +91,7 @@ if (!seg) {
   fetch("dove.json?t=" + Date.now(), {cache: "no-store"})
     .then(function(r){ return r.json(); })
     .then(function(d){
-      if (!d.host) { fallita("Vera in questo momento non e' raggiungibile. Riprova fra poco: appena torna online questo stesso link funziona."); return; }
+      if (!d.host) { fallita("Vera in questo momento non e' raggiungibile. Riprova fra poco: appena torna online questo stesso link funziona."); muro(); return; }
       var dest = d.host + "/v/" + encodeURIComponent(seg) + "/";
       // Chiedo alla macchina di Vera se e' sveglia PRIMA di mandarci il telefono: meglio una
       // frase mia che l'errore di rete del browser in mano a un cliente.
@@ -108,6 +108,64 @@ function lenta(dest){
   p.className = "p no";
   m.textContent = "Vera non risponde in questo momento — probabilmente il computer e' spento. Questo link resta valido: riprova piu' tardi.";
   a.innerHTML = '<a class="b" href="' + dest + '">Prova lo stesso</a>';
+  muro();
+}
+
+/* ★★★ [g1242] IL MURO: quello che ha una SCADENZA non puo' vivere solo dove
+   vivo io. Quando questa pagina dice «Vera non risponde», l'uomo che l'ha aperta ha
+   fatto il gesto giusto e riceve zero. Sotto c'e' un `fermo.json` scritto da me quando ero
+   sveglia: il testo e' CIFRATO, perche' questo repo e' pubblico e i conti di un'azienda non
+   si pubblicano per risolvere un problema mio. La chiave si deriva dal segreto che sta nel
+   FRAMMENTO — che il browser non manda a nessun server — quindi lo legge solo chi ha gia'
+   il segnalibro, cioe' esattamente chi lo leggerebbe sulla pagina viva.
+   ⚠ `scade` sta in CHIARO apposta: un avviso invecchiato e' peggio di nessun avviso, e
+   la pagina deve poter tacere da sola senza avere la chiave. */
+function muro(){
+  if (!seg) return;
+  fetch("fermo.json?t=" + Date.now(), {cache: "no-store"})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(b){
+      if (!b) return;
+      var oggi = new Date().toISOString().slice(0,10);
+      if (b.scade && b.scade < oggi) return;
+      /* ⚠ [g1242] una persona ha PIU' segreti (l'esadecimale del segnalibro e le tre
+         parole che la voce sa dire): c'e' una busta per ciascuno e provo finche' una apre.
+         Il primo taglio ne cifrava UNA sola, col segreto sbagliato, e il muro sarebbe stato
+         illeggibile per sempre — l'ha visto WebKit rispondendo `null`, non il banco. */
+      var buste = b.buste || [b];
+      return buste.reduce(function(pr, x){
+        return pr.then(function(got){ return got ? got : apri(x, seg); });
+      }, Promise.resolve(null)).then(function(c){
+        if (!c || !c.righe) return;
+        var h = '<div id="muro" style="text-align:left;background:#2a1410;border:1px solid #7a3a28;'
+              + 'border-left:4px solid #d4553a;border-radius:12px;padding:16px 18px;'
+              + 'margin-top:22px;line-height:1.55;font-size:15px">'
+              + '<b style="color:#ffb9a3">' + esc(c.titolo || "") + '</b><br><br>'
+              + c.righe.map(esc).join("<br><br>")
+              + '<div style="color:#a89b8c;font-size:12.5px;margin-top:14px">'
+              + 'scritto il ' + esc(c.scritto || "?") + ', quando ero accesa. '
+              + 'Quando torno, sulla pagina trovi il conto rifatto.</div></div>';
+        a.innerHTML = a.innerHTML + h;
+      });
+    })
+    .catch(function(){ /* il muro e' un di piu': se cade, cade in silenzio */ });
+}
+function esc(t){ var d = document.createElement("div"); d.textContent = String(t); return d.innerHTML; }
+function b64(s){ var r = atob(s), u = new Uint8Array(r.length);
+  for (var i = 0; i < r.length; i++) u[i] = r.charCodeAt(i); return u; }
+function apri(b, segreto){
+  var enc = new TextEncoder();
+  return crypto.subtle.importKey("raw", enc.encode(segreto), "PBKDF2", false, ["deriveKey"])
+    .then(function(k){
+      return crypto.subtle.deriveKey(
+        {name:"PBKDF2", salt:b64(b.sale), iterations:b.iter, hash:"SHA-256"},
+        k, {name:"AES-GCM", length:256}, false, ["decrypt"]);
+    })
+    .then(function(k){
+      return crypto.subtle.decrypt({name:"AES-GCM", iv:b64(b.nonce)}, k, b64(b.dato));
+    })
+    .then(function(buf){ return JSON.parse(new TextDecoder().decode(buf)); })
+    .catch(function(){ return null; });
 }
 </script>
 </html>
