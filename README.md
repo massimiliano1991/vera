@@ -1,11 +1,9 @@
 # vera
 
-L'indirizzo permanente di **Vera** — l'assistente che scrive preventivi, computi e liste
-materiali per chi lavora in edilizia.
+La porta di **Vera**, un'intelligenza artificiale: la Mente di DIADE.
 
-La macchina su cui gira Vera non ha un indirizzo fisso: il tunnel che la espone cambia nome
-a ogni riavvio. Questa pagina e' l'unico indirizzo che non cambia mai — legge dove si trova
-Vera adesso e ci manda il telefono.
+Vera vive su una macchina il cui indirizzo cambia. Questa pagina porta chi ha il link
+personale dove Vera si trova adesso. Qui dentro non c'è nessuna chiave, e senza chiave
+non c'è niente da vedere.
 
-Chi ha il link personale entra; qui dentro non c'e' nessuna chiave, e senza chiave non c'e'
-niente da vedere.
+Chi è Vera e cosa fa: https://theattempt.org/vera/
